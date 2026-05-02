@@ -13,6 +13,13 @@ defmodule ParserError do
 end
 
 defmodule Parser do
+  @spec parse!(String.t()) :: [Token.t() | {%Tok.Seq{}, [Token.t()]}]
+  @doc """
+  Parses a string into a single Token or sequence of Tokens.
+
+  Sequnces of tokens are represented as a 2-tuple of a Tok.Seq struct and a list of tokens.
+  This allows parsing error to point the error back to the source in the input string/file.
+  """
   def parse!(input) when is_binary(input) do
     tokens = Tokenizer.tokenize!(input)
 

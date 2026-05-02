@@ -13,38 +13,15 @@ end
 
 defmodule Tokenizer do
   @moduledoc """
-  An s-expression tokenizer.
-
-  Accepts a string containg s-expressions and returns a List of ints, floats, atoms, and strings.
-
-  Valid tokens are:
-
-  grouping tokens:
-
-    ( ) [ ]
-
-  operators:
-    
-    = + - / *
-
-  integers:
-
-    0 300 -44
-
-  floats:
-
-    33.9 -44.39
-
-  atoms:
-
-    first true maxAge x2
-
-  strings:
-
-    "blue" "he said \"no worries\" but I didn't trust it"
-
+  Tokenizer defines a tokenize! function that accepts a string and returns
+  a list of Token objects.
   """
 
+  @spec read_token(String.t()) :: {Token.t(), integer()} | nil
+  @doc """
+  Returns {token, chars_consumed}, where chars_consumed is the length of the string
+  that matched to produce the token
+  """
   def read_token(input) do
     patterns = [
       # float
@@ -76,6 +53,7 @@ defmodule Tokenizer do
     end)
   end
 
+  @spec tokenize!(String.t()) :: [Token.t()]
   def tokenize!(input) do
     case tokenize(input) do
       {:ok, tokens} -> tokens
@@ -103,11 +81,13 @@ defmodule Tokenizer do
       nil ->
         {:error, position}
 
-      {token, consumed} ->
+      {token, chars_consumed} ->
         token = %{token | char: position}
-        input = String.slice(input, consumed..-1//1)
-        position = position + consumed
+        input = String.slice(input, chars_consumed..-1//1)
+        position = position + chars_consumed
 
+        # whitespace and seq/paren tokens can be concatenated with any other token.
+        # any other concatenations are invalid.
         stack =
           case {token, stack} do
             {_, []} -> [token | stack]
