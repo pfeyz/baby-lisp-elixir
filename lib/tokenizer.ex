@@ -1,8 +1,69 @@
+defmodule Token do
+  defmacro __using__(__ops) do
+    quote do
+      defstruct [:val, :char]
+
+      def from_string(value) do
+        %__MODULE__{val: init(value)}
+      end
+    end
+  end
+end
+
+defmodule OpTok do
+  use Token
+  def init(value), do: String.to_atom(value)
+end
+
+defmodule SpaceTok do
+  use Token
+  def init(value), do: value
+end
+
+defmodule AtomTok do
+  use Token
+  def init(value), do: String.to_atom(value)
+end
+
+defmodule ListTok do
+  use Token
+
+  def init(value) do
+    case value do
+      "(" -> :start
+      ")" -> :end
+    end
+  end
+end
+
+defmodule StringTok do
+  use Token
+
+  def init(value) do
+    # drop quotation marks and replace nulls with quotation marks
+    value
+    |> String.slice(1..-2//1)
+    |> String.replace(<<0>>, ~s("))
+  end
+end
+
+defmodule NumberTok do
+  use Token
+
+  def init(value) do
+    try do
+      String.to_float(value)
+    catch
+      _, _ -> String.to_integer(value)
+    end
+  end
+end
+
 defmodule TokenizationError do
   defexception [:message]
 
   def exception({input, charnum}) do
-    indicator = String.duplicate(" ", max(0, charnum-1)) <> "^^"
+    indicator = String.duplicate(" ", max(0, charnum - 1)) <> "^^"
     message = EEx.eval_string("
 <%= input %>
 <%= indicator %>
@@ -61,33 +122,30 @@ defmodule Tokenizer do
 
   def read_token(input) do
     patterns = [
-      {:float, ~r/^-?[0-9]+\.[0-9]+/, &String.to_float(&1)},
-      {:int, ~r/^-?[0-9]+/, &String.to_integer(&1)},
-      {:atom, ~r/^[a-zA-Z_][a-zA-Z0-9]*/, &String.to_atom(&1)},
-      {:string, ~r/^".*?"/, fn s -> s
-                                 |> String.slice(1..-2//1) 
-                                 |> String.replace(<<0>>, ~s("))
-                                 end
-      },
-      {:paren, ~r/^[()]/,
-       &if &1 == "(" do
-         :open
-       else
-         :close
-       end},
-      {:operator, ~r(^[=+-/*]), &String.to_atom(&1)},
-      {:whitespace, ~r/^\s+/, & &1}
+      # float
+      {NumberTok, ~r/^-?[0-9]+\.[0-9]+/},
+      # int
+      {NumberTok, ~r/^-?[0-9]+/},
+      {AtomTok, ~r/^[a-zA-Z_][a-zA-Z0-9]*/},
+      {StringTok, ~r/^".*?"/},
+      {ListTok, ~r/^[()]/},
+      {OpTok, ~r(^[=+-/*])},
+      {SpaceTok, ~r/^\s+/}
     ]
 
     # run patterns until one is found
-    Enum.reduce(patterns, nil, fn {type, pat, trans}, acc ->
+    Enum.reduce(patterns, nil, fn {type, pattern}, acc ->
       if acc do
         # return the first match
         acc
       else
-        case Regex.run(pat, input) do
-          [match] -> {{type, trans.(match)}, String.length(match)}
-          _ -> nil
+        case Regex.run(pattern, input) do
+          [match] ->
+            token = Kernel.apply(type, :from_string, [match])
+            {token, String.length(match)}
+
+          _ ->
+            nil
         end
       end
     end)
@@ -108,31 +166,30 @@ defmodule Tokenizer do
   def tokenize("", stack, _) do
     stack =
       Enum.reduce(stack, [], fn
-        {:whitespace, _, _}, acc -> acc
+        %SpaceTok{}, acc -> acc
         token, acc -> [token | acc]
       end)
 
     {:ok, stack}
   end
 
-
   def tokenize(input, stack, position) do
     case read_token(input) do
       nil ->
         {:error, position}
 
-      {{tok_type, value}, consumed} ->
-        token = {tok_type, value, position}
+      {token, consumed} ->
+        token = %{token | char: position}
         input = String.slice(input, consumed..-1//1)
         position = position + consumed
 
         stack =
-          case {tok_type, stack} do
+          case {token, stack} do
             {_, []} -> [token | stack]
-            {_, [{:paren, _, _} | _]} -> [token | stack]
-            {:paren, _} -> [token | stack]
-            {:whitespace, _} -> [token | stack]
-            {_, [{:whitespace, _, _} | _]} -> [token | stack]
+            {_, [%ListTok{} | _]} -> [token | stack]
+            {%ListTok{}, _} -> [token | stack]
+            {%SpaceTok{}, _} -> [token | stack]
+            {_, [%SpaceTok{} | _]} -> [token | stack]
             _ -> {:error, position}
           end
 
@@ -145,39 +202,42 @@ defmodule Tokenizer do
 
   def parse(input) when is_binary(input) do
     tokens = tokenize!(input)
+
     try do
-      parse tokens
+      parse(tokens)
     catch
       {:error, message, charnum} -> raise ParserError, {message, input, charnum}
-    end    
+    end
   end
 
-  def parse([{:paren, :close, charnum}]), do: throw {:error, "extra paren", charnum}
-  def parse([{:paren, :open, charnum} | rest]) do
-    case parse_list(rest, [], charnum) do
-      {tokens, []} -> tokens
-      {_, [{_,_,charnum} | _]} -> throw {:error, "syntax error", charnum}
-    end
-    
+  def parse(%ListTok{val: :end, char: char}) do
+    throw({:error, "extra paren", char})
   end
+
+  def parse([t = %ListTok{val: :start} | rest]) do
+    case parse_list(rest, [], t) do
+      {tokens, []} -> tokens
+      {_, [%{char: charnum} | _]} -> throw({:error, "syntax error", charnum})
+    end
+  end
+
   def parse([token]), do: token
   def parse(token), do: token
 
-  def parse_list([{:paren, :close, _} | rest], collected, charnum) do
-    {{:list, Enum.reverse(collected), charnum}, rest}
+  def parse_list([%ListTok{val: :end} | rest], collected, opener) do
+    {{opener, Enum.reverse(collected)}, rest}
   end
 
-  def parse_list([{:paren, :open, inner_charnum} | rest], collected, charnum) do
-    {inner_list, remaining} = parse_list(rest, [], inner_charnum)
-    parse_list(remaining, [inner_list|collected], charnum)
+  def parse_list([t = %ListTok{val: :start} | rest], collected, opener) do
+    {inner_list, remaining} = parse_list(rest, [], t)
+    parse_list(remaining, [inner_list | collected], opener)
   end
 
-  def parse_list([], _, charnum) do
-    throw {:error, "unclosed paren", charnum}
-  end 
-
-  def parse_list([token|rest], collected, charnum) do
-    parse_list(rest, [parse(token) | collected], charnum)
+  def parse_list([], _, opener) do
+    throw({:error, "unclosed paren", opener.char})
   end
 
+  def parse_list([token | rest], collected, opener) do
+    parse_list(rest, [parse(token) | collected], opener)
+  end
 end

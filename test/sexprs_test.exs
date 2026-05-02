@@ -4,22 +4,20 @@ defmodule SexprsTest do
 
   test "toknize an input" do
     assert Tokenizer.tokenize(~s<(first (list -33.05 5.3 "yel\\"low" 0 -3 4))>) ==
-             {
-               :ok,
-               [
-                 {:paren, :open, 0},
-                 {:atom, :first, 1},
-                 {:paren, :open, 7},
-                 {:atom, :list, 8},
-                 {:float, -33.05, 13},
-                 {:float, 5.3, 20},
-                 {:string, "yel\"low", 24},
-                 {:int, 0, 34},
-                 {:int, -3, 36},
-                 {:int, 4, 39},
-                 {:paren, :close, 40},
-                 {:paren, :close, 41}
-               ]
-             }
+             {:ok,
+              [
+                %ListTok{val: :start, char: 0},
+                %AtomTok{val: :first, char: 1},
+                %ListTok{val: :start, char: 7},
+                %AtomTok{val: :list, char: 8},
+                %NumberTok{val: -33.05, char: 13},
+                %NumberTok{val: 5.3, char: 20},
+                %StringTok{val: "yel\"low", char: 24},
+                %NumberTok{val: 0, char: 34},
+                %NumberTok{val: -3, char: 36},
+                %NumberTok{val: 4, char: 39},
+                %ListTok{val: :end, char: 40},
+                %ListTok{val: :end, char: 41}
+              ]}
   end
 end
