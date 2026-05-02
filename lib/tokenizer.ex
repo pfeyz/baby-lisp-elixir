@@ -1,66 +1,3 @@
-defmodule Token do
-  defmacro __using__(__ops) do
-    quote do
-      defstruct [:val, :char]
-
-      def from_string(value) do
-        %__MODULE__{val: init(value)}
-      end
-    end
-  end
-end
-
-defmodule Tok do
-  defmodule Op do
-    use Token
-    def init(value), do: String.to_atom(value)
-  end
-
-  defmodule Space do
-    use Token
-    def init(value), do: value
-  end
-
-  defmodule Atom do
-    use Token
-    def init(value), do: String.to_atom(value)
-  end
-
-  defmodule List do
-    use Token
-
-    def init(value) do
-      case value do
-        "(" -> :start
-        ")" -> :end
-      end
-    end
-  end
-
-  defmodule Str do
-    use Token
-
-    def init(value) do
-      # drop quotation marks and replace nulls with quotation marks
-      value
-      |> String.slice(1..-2//1)
-      |> String.replace(<<0>>, ~s("))
-    end
-  end
-
-  defmodule Num do
-    use Token
-
-    def init(value) do
-      try do
-        String.to_float(value)
-      catch
-        _, _ -> String.to_integer(value)
-      end
-    end
-  end
-end
-
 defmodule TokenizationError do
   defexception [:message]
 
@@ -71,20 +8,6 @@ defmodule TokenizationError do
 <%= indicator %>
 ", input: input, indicator: indicator)
     %TokenizationError{message: message}
-  end
-end
-
-defmodule ParserError do
-  defexception [:message]
-
-  def exception({message, input, charnum}) do
-    indicator = String.duplicate(" ", charnum) <> "^"
-    message = EEx.eval_string("
-<%= message %>
-<%= input %>
-<%= indicator %>
-", message: message, input: input, indicator: indicator)
-    %ParserError{message: message}
   end
 end
 
@@ -128,9 +51,9 @@ defmodule Tokenizer do
       {Tok.Num, ~r/^-?[0-9]+\.[0-9]+/},
       # int
       {Tok.Num, ~r/^-?[0-9]+/},
-      {Tok.Atom, ~r/^[a-zA-Z_][a-zA-Z0-9]*/},
+      {Tok.Sym, ~r/^[a-zA-Z_][a-zA-Z0-9]*/},
       {Tok.Str, ~r/^".*?"/},
-      {Tok.List, ~r/^[()]/},
+      {Tok.Seq, ~r/^[()]/},
       {Tok.Op, ~r(^[=+-/*])},
       {Tok.Space, ~r/^\s+/}
     ]
@@ -188,8 +111,8 @@ defmodule Tokenizer do
         stack =
           case {token, stack} do
             {_, []} -> [token | stack]
-            {_, [%Tok.List{} | _]} -> [token | stack]
-            {%Tok.List{}, _} -> [token | stack]
+            {_, [%Tok.Seq{} | _]} -> [token | stack]
+            {%Tok.Seq{}, _} -> [token | stack]
             {%Tok.Space{}, _} -> [token | stack]
             {_, [%Tok.Space{} | _]} -> [token | stack]
             _ -> {:error, position}
@@ -200,46 +123,5 @@ defmodule Tokenizer do
           _ -> tokenize(input, stack, position)
         end
     end
-  end
-
-  def parse(input) when is_binary(input) do
-    tokens = tokenize!(input)
-
-    try do
-      parse(tokens)
-    catch
-      {:error, message, charnum} -> raise ParserError, {message, input, charnum}
-    end
-  end
-
-  def parse(%Tok.List{val: :end, char: char}) do
-    throw({:error, "extra paren", char})
-  end
-
-  def parse([t = %Tok.List{val: :start} | rest]) do
-    case parse_list(rest, [], t) do
-      {tokens, []} -> tokens
-      {_, [%{char: charnum} | _]} -> throw({:error, "syntax error", charnum})
-    end
-  end
-
-  def parse([token]), do: token
-  def parse(token), do: token
-
-  def parse_list([%Tok.List{val: :end} | rest], collected, opener) do
-    {{opener, Enum.reverse(collected)}, rest}
-  end
-
-  def parse_list([t = %Tok.List{val: :start} | rest], collected, opener) do
-    {inner_list, remaining} = parse_list(rest, [], t)
-    parse_list(remaining, [inner_list | collected], opener)
-  end
-
-  def parse_list([], _, opener) do
-    throw({:error, "unclosed paren", opener.char})
-  end
-
-  def parse_list([token | rest], collected, opener) do
-    parse_list(rest, [parse(token) | collected], opener)
   end
 end
