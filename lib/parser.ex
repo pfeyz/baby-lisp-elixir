@@ -3,7 +3,11 @@ defmodule ParserError do
 
   @doc " Shows the user the character in the input where the error occured "
   def exception({message, input, charnum}) do
-    indicator = String.duplicate(" ", charnum) <> "^"
+    indicator = if charnum do
+      String.duplicate(" ", charnum) <> "^"
+    else
+      ""
+    end
     message = EEx.eval_string("
 <%= message %>
 <%= input %>
@@ -20,6 +24,26 @@ defmodule Parser do
 
   Sequnces of tokens are represented as a 2-tuple of a Tok.Seq struct and a list of tokens.
   This allows parsing error to point the error back to the source in the input string/file.
+
+
+    iex()> Parser.parse!("(def (add x y) (+ x y))")
+    {%Tok.Seq{val: :start, char: 0},
+    [
+    %Tok.Sym{val: :def, char: 1},
+    {%Tok.Seq{val: :start, char: 5},
+        [
+        %Tok.Sym{val: :add, char: 6},
+        %Tok.Sym{val: :x, char: 10},
+        %Tok.Sym{val: :y, char: 12}
+        ]},
+    {%Tok.Seq{val: :start, char: 15},
+        [
+        %Tok.Op{val: :+, char: 16},
+        %Tok.Sym{val: :x, char: 18},
+        %Tok.Sym{val: :y, char: 20}
+        ]}
+    ]}
+
   """
   def parse!(input) when is_binary(input) do
     tokens = Tokenizer.tokenize!(input)
@@ -30,6 +54,19 @@ defmodule Parser do
       {:error, message, charnum} -> raise ParserError, {message, input, charnum}
     end
   end
+
+  def parse(input) when is_binary(input) do
+    try do
+      case Tokenizer.tokenize(input) do
+        {:ok, tokens} -> parse(tokens)
+        {:error, charnum} -> {:error, :tokenizer, charnum}
+      end
+    catch
+      {:error, message, charnum} -> {:error, :parser, message, charnum}
+    end
+  end
+
+  def parse([]), do: throw {:error, "empty input", nil}
 
   def parse(%Tok.Seq{val: :end, char: char}) do
     throw({:error, "extra paren", char})
@@ -43,8 +80,11 @@ defmodule Parser do
     end
   end
 
-  # all other token types pass through
-  def parse(token), do: token
+  # if the tokenizer recognized a single token from an input stream, unwrap it
+  def parse([token]), do: token
+  
+  # sequences of tokens are only allowed inside a Tok.Seq 
+  def parse([_, %{char: charnum} | _]), do: throw({:error, "syntax error: tokens may not be sequenced here", charnum})
 
   # opener is the Tok.Seq that started this parsing branch
   def parse_list([%Tok.Seq{val: :end} | rest], collected, opener) do
@@ -63,6 +103,10 @@ defmodule Parser do
   end
 
   def parse_list([token | rest], collected, opener) do
-    parse_list(rest, [parse(token) | collected], opener)
+    token = case token do
+              %{} -> parse [token]
+              _ -> parse token
+            end
+    parse_list(rest, [token | collected], opener)
   end
 end
