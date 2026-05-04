@@ -1,17 +1,17 @@
 defmodule Token do
   @moduledoc """
-  A Token is a module that defines a struct with :value and :char keys
-  and defines an init function. 
+  A Token type is a struct that contains :val and :char keys.
 
-  The init function takes the string representation of the token and 
-  returns it as a valid data structure that's stored in :value
+  A module that implements the Token behaviour must implement an `init` function
+  that accepts a string and returns the data structure the token is meant to
+  represent. This will be stored as :value in the struct.
 
   :char is used to store an integer index of where the token appeared in
   the input string to allow for informative error messages.
   """
 
-  @callback init(value :: String) :: term
-  @type t :: struct()
+  @callback init(value :: String.t()) :: term
+  @type t :: %{val: term, char: integer() | nil}
   defmacro __using__(__ops) do
     quote do
       defstruct [:val, :char]
@@ -26,21 +26,25 @@ end
 # the tokens used in the codebase
 defmodule Tok do
   defmodule Op do
+    @moduledoc "Operators that invoke functions, like *"
     use Token
     def init(value), do: String.to_atom(value)
   end
 
   defmodule Space do
+    @moduledoc "Whitespace tokens"
     use Token
     def init(value), do: value
   end
 
   defmodule Sym do
+    @moduledoc " Symbols/atoms "
     use Token
     def init(value), do: String.to_atom(value)
   end
 
   defmodule Seq do
+    @moduledoc " Sequence delimiters. Correspond to open and close parenthesis "
     use Token
 
     def init(value) do

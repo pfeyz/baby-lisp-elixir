@@ -1,6 +1,7 @@
 defmodule ParserError do
   defexception [:message]
 
+  @doc " Shows the user the character in the input where the error occured "
   def exception({message, input, charnum}) do
     indicator = String.duplicate(" ", charnum) <> "^"
     message = EEx.eval_string("
@@ -37,24 +38,28 @@ defmodule Parser do
   def parse([t = %Tok.Seq{val: :start} | rest]) do
     case parse_list(rest, [], t) do
       {tokens, []} -> tokens
+      # there should not be any tokens after the closing paren
       {_, [%{char: charnum} | _]} -> throw({:error, "syntax error", charnum})
     end
   end
 
-  def parse([token]), do: token
+  # all other token types pass through
   def parse(token), do: token
 
+  # opener is the Tok.Seq that started this parsing branch
   def parse_list([%Tok.Seq{val: :end} | rest], collected, opener) do
     {{opener, Enum.reverse(collected)}, rest}
   end
+  # 
+  # reached the end of the list without a closing paren
+  def parse_list([], _, opener) do
+    throw({:error, "unclosed paren", opener.char})
+  end
 
+  # we found an inner list
   def parse_list([t = %Tok.Seq{val: :start} | rest], collected, opener) do
     {inner_list, remaining} = parse_list(rest, [], t)
     parse_list(remaining, [inner_list | collected], opener)
-  end
-
-  def parse_list([], _, opener) do
-    throw({:error, "unclosed paren", opener.char})
   end
 
   def parse_list([token | rest], collected, opener) do

@@ -1,6 +1,7 @@
 defmodule TokenizationError do
   defexception [:message]
 
+  @doc " Shows the user the character in the input where the error occured "
   def exception({input, charnum}) do
     indicator = String.duplicate(" ", max(0, charnum - 1)) <> "^^"
     message = EEx.eval_string("
@@ -38,7 +39,6 @@ defmodule Tokenizer do
     # run patterns until one is found
     Enum.reduce(patterns, nil, fn {type, pattern}, acc ->
       if acc do
-        # return the first match
         acc
       else
         case Regex.run(pattern, input) do
@@ -62,13 +62,19 @@ defmodule Tokenizer do
   end
 
   def tokenize(input) do
-    input = String.replace(input, ~s(\\"), <<0>>)
+    # in order to allow for escaped quotaion marks (\") inside of strings, we
+    # replace them with null bytes until the string is tokenized and then place
+    # the \" back into the string.
+    input = input
+    |> String.replace(<<0>>, <<>>)  # drop any existing null bytes
+    |> String.replace(~s(\\"), <<0>>)
     tokenize(input, [], 0)
   end
 
   def tokenize("", stack, _) do
     stack =
       Enum.reduce(stack, [], fn
+        # drop all whitespace tokens
         %Tok.Space{}, acc -> acc
         token, acc -> [token | acc]
       end)
