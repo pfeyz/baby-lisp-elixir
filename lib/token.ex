@@ -8,6 +8,24 @@ defmodule Token do
 
   :char is used to store an integer index of where the token appeared in
   the input string to allow for informative error messages.
+
+    iex> Tokenizer.tokenize!("1 -2 0.334 -99.1 () ( ) + / name _var ok123")
+    [
+    %Tok.Num{val: 1, char: 0},
+    %Tok.Num{val: -2, char: 2},
+    %Tok.Num{val: 0.334, char: 5},
+    %Tok.Num{val: -99.1, char: 11},
+    %Tok.Seq{val: :start, char: 17},
+    %Tok.Seq{val: :end, char: 18},
+    %Tok.Seq{val: :start, char: 20},
+    %Tok.Seq{val: :end, char: 22},
+    %Tok.Op{val: :+, char: 24},
+    %Tok.Op{val: :/, char: 26},
+    %Tok.Sym{val: :name, char: 28},
+    %Tok.Sym{val: :_var, char: 33},
+    %Tok.Sym{val: :ok123, char: 38}
+    ]
+
   """
 
   @callback init(value :: String.t()) :: term
