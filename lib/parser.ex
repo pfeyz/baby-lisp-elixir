@@ -29,18 +29,18 @@ defmodule Parser do
     iex()> Parser.parse!("(def (add x y) (+ x y))")
     {%Tok.Seq{val: :start, char: 0},
     [
-    %Tok.Sym{val: :def, char: 1},
+    %Tok.Atom{val: :def, char: 1},
     {%Tok.Seq{val: :start, char: 5},
         [
-        %Tok.Sym{val: :add, char: 6},
-        %Tok.Sym{val: :x, char: 10},
-        %Tok.Sym{val: :y, char: 12}
+        %Tok.Atom{val: :add, char: 6},
+        %Tok.Atom{val: :x, char: 10},
+        %Tok.Atom{val: :y, char: 12}
         ]},
     {%Tok.Seq{val: :start, char: 15},
         [
         %Tok.Op{val: :+, char: 16},
-        %Tok.Sym{val: :x, char: 18},
-        %Tok.Sym{val: :y, char: 20}
+        %Tok.Atom{val: :x, char: 18},
+        %Tok.Atom{val: :y, char: 20}
         ]}
     ]}
 

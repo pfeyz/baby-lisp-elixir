@@ -15,6 +15,8 @@ end
 defmodule Tokenizer do
   @moduledoc """
   Tokenizer defines a tokenize! function that accepts a string and returns
+
+
   a list of Token objects.
   """
 
@@ -29,7 +31,7 @@ defmodule Tokenizer do
       {Tok.Num, ~r/^-?[0-9]+\.[0-9]+/},
       # int
       {Tok.Num, ~r/^-?[0-9]+/},
-      {Tok.Sym, ~r/^[a-zA-Z_][a-zA-Z0-9]*/},
+      {Tok.Atom, ~r/^[a-zA-Z_][a-zA-Z0-9]*/},
       {Tok.Str, ~r/^".*?"/},
       {Tok.Seq, ~r/^[()]/},
       {Tok.Op, ~r(^[=+-/*])},

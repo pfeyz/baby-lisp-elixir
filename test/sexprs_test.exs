@@ -15,9 +15,9 @@ defmodule SexprsTest do
         %Tok.Seq{val: :end, char: 22},
         %Tok.Op{val: :+, char: 24},
         %Tok.Op{val: :/, char: 26},
-        %Tok.Sym{val: :name, char: 28},
-        %Tok.Sym{val: :_var, char: 33},
-        %Tok.Sym{val: :ok123, char: 38},
+        %Tok.Atom{val: :name, char: 28},
+        %Tok.Atom{val: :_var, char: 33},
+        %Tok.Atom{val: :ok123, char: 38},
         %Tok.Str{val: "welcome", char: 44}
       ]
   end 
@@ -27,9 +27,9 @@ defmodule SexprsTest do
              {:ok,
               [
                 %Tok.Seq{val: :start, char: 0},
-                %Tok.Sym{val: :first, char: 1},
+                %Tok.Atom{val: :first, char: 1},
                 %Tok.Seq{val: :start, char: 7},
-                %Tok.Sym{val: :list, char: 8},
+                %Tok.Atom{val: :list, char: 8},
                 %Tok.Num{val: -33.05, char: 13},
                 %Tok.Num{val: 5.3, char: 20},
                 %Tok.Str{val: "yel\"low", char: 24},
@@ -45,10 +45,10 @@ defmodule SexprsTest do
     assert Parser.parse!(~s<(first (list 1 (* 3 4) "ok"))>) ==
              {%Tok.Seq{val: :start, char: 0},
               [
-                %Tok.Sym{val: :first, char: 1},
+                %Tok.Atom{val: :first, char: 1},
                 {%Tok.Seq{val: :start, char: 7},
                  [
-                   %Tok.Sym{val: :list, char: 8},
+                   %Tok.Atom{val: :list, char: 8},
                    %Tok.Num{val: 1, char: 13},
                    {%Tok.Seq{val: :start, char: 15},
                     [

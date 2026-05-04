@@ -21,9 +21,9 @@ defmodule Token do
     %Tok.Seq{val: :end, char: 22},
     %Tok.Op{val: :+, char: 24},
     %Tok.Op{val: :/, char: 26},
-    %Tok.Sym{val: :name, char: 28},
-    %Tok.Sym{val: :_var, char: 33},
-    %Tok.Sym{val: :ok123, char: 38}
+    %Tok.Atom{val: :name, char: 28},
+    %Tok.Atom{val: :_var, char: 33},
+    %Tok.Atom{val: :ok123, char: 38}
     ]
 
   """
@@ -55,8 +55,7 @@ defmodule Tok do
     def init(value), do: value
   end
 
-  defmodule Sym do
-    @moduledoc " Symbols/atoms "
+  defmodule Atom do
     use Token
     def init(value), do: String.to_atom(value)
   end
