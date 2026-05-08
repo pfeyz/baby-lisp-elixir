@@ -8,11 +8,11 @@ defmodule ParserError do
     else
       ""
     end
-    message = EEx.eval_string("
-<%= message %>
-<%= input %>
-<%= indicator %>
-", message: message, input: input, indicator: indicator)
+    message = "
+#{message}
+#{input}
+#{indicator}
+"
     %ParserError{message: message}
   end
 end

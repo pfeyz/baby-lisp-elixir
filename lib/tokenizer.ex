@@ -4,11 +4,10 @@ defmodule TokenizationError do
   @doc " Shows the user the character in the input where the error occured "
   def exception({input, charnum}) do
     indicator = String.duplicate(" ", max(0, charnum - 1)) <> "^^"
-    message = EEx.eval_string("
-<%= input %>
-<%= indicator %>
-", input: input, indicator: indicator)
-    %TokenizationError{message: message}
+    %TokenizationError{message: "
+#{input}
+#{indicator}
+"}
   end
 end
 
