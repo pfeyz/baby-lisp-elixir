@@ -30,7 +30,6 @@ defmodule Token do
   """
 
   @callback init(value :: String.t()) :: term
-  @type t :: %{val: term, char: integer() | nil}
   defmacro __using__(__ops) do
     quote do
       defstruct [:val, :char]
@@ -44,6 +43,7 @@ end
 
 # the tokens used in the codebase
 defmodule Tok do
+  @type t :: Op | Space | Symbol | Seq | Str | Num
   defmodule Op do
     @moduledoc "Operators that invoke functions, like *"
     use Token

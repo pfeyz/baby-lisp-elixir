@@ -19,7 +19,7 @@ defmodule Tokenizer do
   a list of Token objects.
   """
 
-  @spec read_token(String.t()) :: {Token.t(), integer()} | nil
+  @spec read_token(String.t()) :: {Tok.t(), integer()} | nil
   @doc """
   Returns {token, chars_consumed}, where chars_consumed is the length of the string
   that matched to produce the token
@@ -55,7 +55,7 @@ defmodule Tokenizer do
     end)
   end
 
-  @spec tokenize!(String.t()) :: [Token.t()]
+  @spec tokenize!(String.t()) :: [Tok.t()]
   def tokenize!(input) do
     case tokenize(input) do
       {:ok, tokens} -> tokens
@@ -84,7 +84,7 @@ defmodule Tokenizer do
         {:error, position}
 
       {token, chars_consumed} ->
-        token = %{token | char: position}
+        token = struct(token, %{char: position})
         input = String.slice(input, chars_consumed..-1//1)
         position = position + chars_consumed
 

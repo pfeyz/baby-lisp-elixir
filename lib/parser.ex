@@ -18,7 +18,7 @@ defmodule ParserError do
 end
 
 defmodule Parser do
-  @spec parse!(String.t()) :: [Token.t() | {%Tok.Seq{}, [Token.t()]}]
+  @spec parse!(String.t()) :: [Tok.t() | {%Tok.Seq{}, [Tok.t()]}]
   @doc """
   Parses a string into a single Token or sequence of Tokens.
 
