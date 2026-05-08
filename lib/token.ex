@@ -1,5 +1,6 @@
 defmodule Token do
   @moduledoc """
+
   A Token type is a struct that contains :val and :char keys.
 
   A module that implements the Token behaviour must implement an `init` function
@@ -79,7 +80,6 @@ defmodule Tok do
       # drop outer quotation marks and replace nulls with inner quotation marks
       value
       |> String.slice(1..-2//1)
-      |> String.replace(<<0>>, ~s("))
     end
   end
 

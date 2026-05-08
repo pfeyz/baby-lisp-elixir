@@ -32,12 +32,12 @@ defmodule SexprsTest do
                 %Tok.Atom{val: :list, char: 8},
                 %Tok.Num{val: -33.05, char: 13},
                 %Tok.Num{val: 5.3, char: 20},
-                %Tok.Str{val: "yel\"low", char: 24},
-                %Tok.Num{val: 0, char: 34},
-                %Tok.Num{val: -3, char: 36},
-                %Tok.Num{val: 4, char: 39},
-                %Tok.Seq{val: :end, char: 40},
-                %Tok.Seq{val: :end, char: 41}
+                %Tok.Str{val: "yel\\\"low", char: 24},
+                %Tok.Num{val: 0, char: 35},
+                %Tok.Num{val: -3, char: 37},
+                %Tok.Num{val: 4, char: 40},
+                %Tok.Seq{val: :end, char: 41},
+                %Tok.Seq{val: :end, char: 42}
               ]}
   end
 

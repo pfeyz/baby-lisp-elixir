@@ -32,7 +32,8 @@ defmodule Tokenizer do
       # int
       {Tok.Num, ~r/^-?[0-9]+/},
       {Tok.Atom, ~r/^[a-zA-Z_][a-zA-Z0-9]*/},
-      {Tok.Str, ~r/^".*?"/},
+      # strs can have embedded quotes
+      {Tok.Str, ~r/^"(?:\\"|.)*?"/},
       {Tok.Seq, ~r/^[()]/},
       {Tok.Op, ~r(^[=+-/*])},
       {Tok.Space, ~r/^\s+/}
@@ -64,12 +65,6 @@ defmodule Tokenizer do
   end
 
   def tokenize(input) do
-    # in order to allow for escaped quotaion marks (\") inside of strings, we
-    # replace them with null bytes until the string is tokenized and then place
-    # the \" back into the string.
-    input = input
-    |> String.replace(<<0>>, <<>>)  # drop any existing null bytes
-    |> String.replace(~s(\\"), <<0>>)
     tokenize(input, [], 0)
   end
 
