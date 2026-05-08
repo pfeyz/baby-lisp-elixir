@@ -9,11 +9,11 @@ $ iex -S mix
     iex(1)> Parser.parse!(~s<(first (list one 2 -3.3 "fo\\"ur"))>)
     {%Tok.Seq{val: :start, char: 0},
         [
-        %Tok.Atom{val: :first, char: 1},
+        %Tok.Symbol{val: :first, char: 1},
         {%Tok.Seq{val: :start, char: 7},
             [
-            %Tok.Atom{val: :list, char: 8},
-            %Tok.Atom{val: :one, char: 13},
+            %Tok.Symbol{val: :list, char: 8},
+            %Tok.Symbol{val: :one, char: 13},
             %Tok.Num{val: 2, char: 17},
             %Tok.Num{val: -3.3, char: 19},
             %Tok.Str{val: "fo\"ur", char: 24}

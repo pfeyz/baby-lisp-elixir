@@ -31,11 +31,11 @@ defmodule Tokenizer do
       {Tok.Num, ~r/^-?[0-9]+\.[0-9]+/},
       # int
       {Tok.Num, ~r/^-?[0-9]+/},
-      {Tok.Atom, ~r/^[a-zA-Z_][a-zA-Z0-9]*/},
+      {Tok.Symbol, ~r/^[a-zA-Z_][a-zA-Z0-9]*/},
+      {Tok.Symbol, ~r(^[=+-/*])},
       # strs can have embedded quotes
       {Tok.Str, ~r/^"(?:\\"|.)*?"/},
       {Tok.Seq, ~r/^[()]/},
-      {Tok.Op, ~r(^[=+-/*])},
       {Tok.Space, ~r/^\s+/}
     ]
 
