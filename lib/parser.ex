@@ -69,7 +69,7 @@ defmodule Parser do
   def parse([]), do: throw {:error, "empty input", nil}
 
   def parse(%Tok.Seq{val: :end, char: char}) do
-    throw({:error, "extra paren", char})
+    throw({:error, "syntax error", char})
   end
 
   def parse([t = %Tok.Seq{val: :start} | rest]) do
